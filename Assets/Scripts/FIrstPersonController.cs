@@ -15,6 +15,7 @@ public class FIrstPersonController : MonoBehaviour
     [SerializeField] private bool canJump = true;
     [SerializeField] private bool canCrouch = true;
     [SerializeField] private bool canUseHeadBob = true;
+    [SerializeField] private bool canSlide = true;
 
     [Header("Controls")]
     [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
@@ -25,6 +26,7 @@ public class FIrstPersonController : MonoBehaviour
     [SerializeField] private float crouchSpeed = 1.5f;
     [SerializeField] private float walkSpeed = 3.0f;
     [SerializeField] private float sprintSpeed = 6.0f;
+    [SerializeField] private float slopeSpeed = 8f;
 
     [Header("Look Parameters")]
     [SerializeField, Range(1, 10)] private float lookSpeedX = 2.0f;
@@ -54,6 +56,26 @@ public class FIrstPersonController : MonoBehaviour
     [SerializeField] private float crouchBobAmount = 0.025f;
     private float defaultYPos = 0;
     private float timer;
+
+    // SLIDING PARAMETERS
+    private Vector3 hitPointNormal;
+
+    private bool IsSliding
+    {
+        get
+        {
+            if (cc.isGrounded && Physics.Raycast(transform.position, Vector3.down, out RaycastHit slopeHit, 2f))
+            {
+                hitPointNormal = slopeHit.normal;
+                return Vector3.Angle(hitPointNormal, Vector3.up) > cc.slopeLimit;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
 
     private Camera playerCamera;
     private CharacterController cc;
@@ -152,7 +174,8 @@ public class FIrstPersonController : MonoBehaviour
             moveDir.y -= gravity * Time.deltaTime;
         }
 
-
+        if (canSlide && IsSliding)
+            moveDir += new Vector3(hitPointNormal.x, -hitPointNormal.y, hitPointNormal.z) * slopeSpeed;
 
         cc.Move(moveDir * Time.deltaTime);
     }
