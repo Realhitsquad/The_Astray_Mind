@@ -5805,7 +5805,7 @@ MonoBehaviour:
   canSlide: 1
   sprintKey: 304
   jumpKey: 32
-  crouchKey: 308
+  crouchKey: 102
   crouchSpeed: 1.5
   walkSpeed: 3
   sprintSpeed: 6

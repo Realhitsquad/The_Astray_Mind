@@ -1,14 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class FIrstPersonController : MonoBehaviour
+public class FirstPersonController : MonoBehaviour
 {
     public bool canMove { get; private set; } = true;
     private bool IsSprinting => canSprint && Input.GetKey(sprintKey);
     private bool shouldJump => Input.GetKey(jumpKey) && cc.isGrounded;
-    private bool shouldCrouch => Input.GetKeyDown(crouchKey) && !duringCrouchAnimation && cc.isGrounded;
+    private bool shouldCrouch => cc.isGrounded;
 
     [Header("Functional Options")]
     [SerializeField] private bool canSprint = true;
@@ -46,7 +47,8 @@ public class FIrstPersonController : MonoBehaviour
     [SerializeField] private Vector3 standingCenter = new Vector3(0, 0, 0);
     private bool isCrouching;
     private bool duringCrouchAnimation;
-
+    private Coroutine crouchRoutine;
+    private bool startedCrouch;
     [Header("Headbob Parameters")]
     [SerializeField] private float walkBobSpeed = 14f;
     [SerializeField] private float walkBobAmount = 0.05f;
@@ -56,6 +58,7 @@ public class FIrstPersonController : MonoBehaviour
     [SerializeField] private float crouchBobAmount = 0.025f;
     private float defaultYPos = 0;
     private float timer;
+
 
     // SLIDING PARAMETERS
     private Vector3 hitPointNormal;
@@ -99,6 +102,21 @@ public class FIrstPersonController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(startedCrouch && Physics.Raycast(playerCamera.transform.position, Vector3.up, 2f))
+        {
+            startedCrouch = false;
+            canCrouch = false;
+            
+            print("Hitting Head");
+        }
+        if (!startedCrouch && !Physics.Raycast(playerCamera.transform.position, Vector3.up, 2f))
+        {
+            startedCrouch = true;
+            canCrouch = true;
+            crouchRoutine = StartCoroutine(CrouchStand(false));
+        }
+
+
         if (canMove)
         {
             HandleMovementInput();
@@ -108,11 +126,12 @@ public class FIrstPersonController : MonoBehaviour
                 HandleJump();
 
             if (canCrouch)
+            {
                 HandleCrouch();
-
+            }
+                
             if (canUseHeadBob)
                 HandleHeadbob();
-            
 
             ApplyFinalMovements();
         }
@@ -147,9 +166,27 @@ public class FIrstPersonController : MonoBehaviour
 
     private void HandleCrouch()
     {
-        if (shouldCrouch)
+        if (shouldCrouch && Input.GetKeyDown(crouchKey))
         {
-            StartCoroutine(CrouchStand());
+            startedCrouch = true;
+            if (crouchRoutine != null)
+            {
+                StopCoroutine(crouchRoutine);
+                crouchRoutine = null;
+            }
+            crouchRoutine = StartCoroutine(CrouchStand(true));
+            
+        }
+
+        if (shouldCrouch && Input.GetKeyUp(crouchKey))
+        {
+            startedCrouch = false;
+            if (crouchRoutine != null)
+            {
+                StopCoroutine(crouchRoutine);
+                crouchRoutine = null;
+            }
+            crouchRoutine = StartCoroutine(CrouchStand(false));
         }
     }
     
@@ -180,34 +217,33 @@ public class FIrstPersonController : MonoBehaviour
         cc.Move(moveDir * Time.deltaTime);
     }
 
-    private IEnumerator CrouchStand()
+    private IEnumerator CrouchStand(bool isEnter)
     {
-        if (isCrouching && Physics.Raycast(playerCamera.transform.position, Vector3.up, 1f))
-            yield break;
-
         duringCrouchAnimation = true;
+        isCrouching = isEnter;
 
-        float timeElapsed = 0;
-        float targetHeight = isCrouching ? standingHeight : crouchHeight;
+        float timeElapsedCrouch = 0;
+        float targetHeight = isEnter ?  crouchHeight : standingHeight;
         float currentHeight = cc.height;
-        Vector3 targetCenter = isCrouching ? standingCenter : crouchingCenter;
+        Vector3 targetCenter = isEnter ? crouchingCenter : standingCenter;
         Vector3 currentCenter = cc.center;
 
-        while(timeElapsed < timeToCrouch)
+        while(timeElapsedCrouch < timeToCrouch)
         {
-            cc.height = Mathf.Lerp(currentHeight, targetHeight, timeElapsed / timeToCrouch);
-            cc.center = Vector3.Lerp(currentCenter, targetCenter, timeElapsed / timeToCrouch);
-            timeElapsed += Time.deltaTime;
+            cc.height = Mathf.Lerp(currentHeight, targetHeight, timeElapsedCrouch / timeToCrouch);
+            cc.center = Vector3.Lerp(currentCenter, targetCenter, timeElapsedCrouch / timeToCrouch);
+            timeElapsedCrouch += Time.deltaTime;
             yield return null;
+            
         }
 
         cc.height = targetHeight;
         cc.center = targetCenter;
 
-        isCrouching = !isCrouching;
+        isCrouching = isEnter;
+
+        crouchRoutine = null;
 
         duringCrouchAnimation = false;
-
-
     }
 }
