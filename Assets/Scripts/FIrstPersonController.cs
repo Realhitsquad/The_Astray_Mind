@@ -59,6 +59,8 @@ public class FirstPersonController : MonoBehaviour
     private float defaultYPos = 0;
     private float timer;
 
+    float timecrouchthing;
+
 
     // SLIDING PARAMETERS
     private Vector3 hitPointNormal;
@@ -102,20 +104,24 @@ public class FirstPersonController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(startedCrouch && Physics.Raycast(playerCamera.transform.position, Vector3.up, 2f))
+        if (startedCrouch && Physics.Raycast(playerCamera.transform.position, Vector3.up, 2f))
         {
-            startedCrouch = false;
-            canCrouch = false;
-            
-            print("Hitting Head");
+            if (Input.GetKeyUp(crouchKey))
+            {
+                startedCrouch = false;
+                canCrouch = false;
+            }
         }
         if (!startedCrouch && !Physics.Raycast(playerCamera.transform.position, Vector3.up, 2f))
         {
-            startedCrouch = true;
             canCrouch = true;
-            crouchRoutine = StartCoroutine(CrouchStand(false));
+            startedCrouch = true;
+            isCrouching = false; 
         }
-
+        if (startedCrouch && !isCrouching && !Physics.Raycast(playerCamera.transform.position, Vector3.up, 2f))
+        {
+            cc.height = Mathf.Lerp(cc.height, standingHeight, timecrouchthing / timeToCrouch);
+        }
 
         if (canMove)
         {
@@ -124,6 +130,11 @@ public class FirstPersonController : MonoBehaviour
 
             if (canJump)
                 HandleJump();
+
+            if (Input.GetKeyDown(crouchKey))
+            {
+                canCrouch = true;
+            }
 
             if (canCrouch)
             {
@@ -168,25 +179,27 @@ public class FirstPersonController : MonoBehaviour
     {
         if (shouldCrouch && Input.GetKeyDown(crouchKey))
         {
-            startedCrouch = true;
             if (crouchRoutine != null)
             {
                 StopCoroutine(crouchRoutine);
                 crouchRoutine = null;
             }
-            crouchRoutine = StartCoroutine(CrouchStand(true));
+            startedCrouch = true;
+            crouchRoutine = StartCoroutine(CrouchStand(startedCrouch));
             
+
         }
 
         if (shouldCrouch && Input.GetKeyUp(crouchKey))
         {
-            startedCrouch = false;
             if (crouchRoutine != null)
             {
                 StopCoroutine(crouchRoutine);
                 crouchRoutine = null;
             }
-            crouchRoutine = StartCoroutine(CrouchStand(false));
+            startedCrouch = false;
+            crouchRoutine = StartCoroutine(CrouchStand(startedCrouch));
+            
         }
     }
     
@@ -223,6 +236,7 @@ public class FirstPersonController : MonoBehaviour
         isCrouching = isEnter;
 
         float timeElapsedCrouch = 0;
+        timecrouchthing = timeElapsedCrouch;
         float targetHeight = isEnter ?  crouchHeight : standingHeight;
         float currentHeight = cc.height;
         Vector3 targetCenter = isEnter ? crouchingCenter : standingCenter;
@@ -233,10 +247,12 @@ public class FirstPersonController : MonoBehaviour
             cc.height = Mathf.Lerp(currentHeight, targetHeight, timeElapsedCrouch / timeToCrouch);
             cc.center = Vector3.Lerp(currentCenter, targetCenter, timeElapsedCrouch / timeToCrouch);
             timeElapsedCrouch += Time.deltaTime;
+            timecrouchthing = timeElapsedCrouch;
             yield return null;
             
         }
 
+        
         cc.height = targetHeight;
         cc.center = targetCenter;
 
