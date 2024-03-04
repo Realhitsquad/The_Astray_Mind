@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 public class FirstPersonController : MonoBehaviour
 {
@@ -215,6 +216,13 @@ public class FirstPersonController : MonoBehaviour
                 defaultYPos + Mathf.Sin(timer) * (isCrouching ? crouchBobAmount : IsSprinting ? sprintBobAmount : walkBobAmount),
                 playerCamera.transform.localPosition.z);
         }
+        if (Mathf.Abs(moveDir.x) == 0f || Mathf.Abs(moveDir.z) == 0f)
+        {
+            playerCamera.transform.localPosition = new Vector3
+                (playerCamera.transform.localPosition.x,
+                defaultYPos,
+                playerCamera.transform.localPosition.z);
+        }
     }
 
     private void ApplyFinalMovements()
@@ -261,5 +269,13 @@ public class FirstPersonController : MonoBehaviour
         crouchRoutine = null;
 
         duringCrouchAnimation = false;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("OutBounds"))
+        {
+            SceneManager.LoadScene(0);
+        }
     }
 }
