@@ -18,11 +18,14 @@ public class FirstPersonController : MonoBehaviour
     [SerializeField] private bool canCrouch = true;
     [SerializeField] private bool canUseHeadBob = true;
     [SerializeField] private bool canSlide = true;
+    [SerializeField] private bool canInteract = true;
+    [SerializeField] private bool useFootsteps = true;
 
     [Header("Controls")]
     [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
     [SerializeField] private KeyCode jumpKey = KeyCode.Space;
     [SerializeField] private KeyCode crouchKey = KeyCode.LeftAlt;
+    [SerializeField] private KeyCode interactKey = KeyCode.E;
 
     [Header("Movement Parameters")]
     [SerializeField] private float crouchSpeed = 1.5f;
@@ -62,6 +65,18 @@ public class FirstPersonController : MonoBehaviour
 
     float timecrouchthing;
 
+    [Header("Footstep Parameters")]
+    [SerializeField] private float baseStepSpeed = 0.5f;
+    [SerializeField] private float crouchStepMultipler = 1.5f;
+    [SerializeField] private float sprintStepMultipler = 0.6f;
+    [SerializeField] private AudioSource footstepAudioSource = default;
+    [SerializeField] private AudioClip[] woodClips = default;
+    [SerializeField] private AudioClip[] metalClips = default;
+    [SerializeField] private AudioClip[] grassClips = default;
+    private float footstepTimer = 0;
+    private float GetCurrentOffset => isCrouching ? baseStepSpeed * crouchStepMultipler : IsSprinting ? baseStepSpeed * sprintStepMultipler : baseStepSpeed;
+
+
 
     // SLIDING PARAMETERS
     private Vector3 hitPointNormal;
@@ -82,6 +97,11 @@ public class FirstPersonController : MonoBehaviour
         }
     }
 
+    [Header("Interaction")]
+    [SerializeField] private Vector3 interactionRayPoint = default;
+    [SerializeField] private float interactionDistance = default;
+    [SerializeField] private LayerMask interactionLayerMask = default;
+    private Interactable currentInteractable;
 
     private Camera playerCamera;
     private CharacterController cc;
@@ -144,6 +164,15 @@ public class FirstPersonController : MonoBehaviour
                 
             if (canUseHeadBob)
                 HandleHeadbob();
+
+            if (canInteract)
+            {
+                HandleInteractionCheck();
+                HandleInteractionInput();
+            }
+
+            if (useFootsteps)
+                Handle_Footsteps();
 
             ApplyFinalMovements();
         }
@@ -222,6 +251,65 @@ public class FirstPersonController : MonoBehaviour
                 (playerCamera.transform.localPosition.x,
                 defaultYPos,
                 playerCamera.transform.localPosition.z);
+        }
+    }
+
+    private void HandleInteractionCheck()
+    {
+        if(Physics.Raycast(playerCamera.ViewportPointToRay(interactionRayPoint), out RaycastHit hit, interactionDistance))
+        {
+            if (hit.collider.gameObject.layer == 9 && (currentInteractable == null || hit.collider.gameObject.GetInstanceID() != currentInteractable.GetInstanceID()))
+            {
+                hit.collider.TryGetComponent(out currentInteractable);
+
+                if (currentInteractable)
+                {
+                    currentInteractable.OnFocus();
+                }
+            }
+        }else if (currentInteractable)
+        {
+            currentInteractable.OnLoseFocus();
+            currentInteractable = null;
+        }
+    }
+
+    private void HandleInteractionInput()
+    {
+        if (Input.GetKeyDown(interactKey) && currentInteractable != null && Physics.Raycast(playerCamera.ViewportPointToRay(interactionRayPoint), out RaycastHit hit, interactionDistance, interactionLayerMask))
+        {
+            currentInteractable.OnInteract();
+        }
+    }
+
+    private void Handle_Footsteps()
+    {
+        if (!cc.isGrounded) return;
+        if (currentInput == Vector2.zero) return;
+
+        footstepTimer -= Time.deltaTime;
+
+        if(footstepTimer <= 0)
+        {
+            if(Physics.Raycast(playerCamera.transform.position, Vector3.down, out RaycastHit hit, 3))
+            {
+                switch (hit.collider.tag)
+                {
+                    case "Footsteps/WOOD":
+                        footstepAudioSource.PlayOneShot(woodClips[Random.Range(0, woodClips.Length - 1)]);
+                        break;
+                    case "Footsteps/METAL":
+                        footstepAudioSource.PlayOneShot(metalClips[Random.Range(0, metalClips.Length - 1)]);
+                        break;
+                    case "Footsteps/GRASS":
+                        footstepAudioSource.PlayOneShot(grassClips[Random.Range(0, grassClips.Length - 1)]);
+                        break;
+                    default:
+                        footstepAudioSource.PlayOneShot(grassClips[Random.Range(0, grassClips.Length - 1)]);
+                        break;
+                }
+            }
+            footstepTimer = GetCurrentOffset;
         }
     }
 

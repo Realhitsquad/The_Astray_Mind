@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - OutBounds
+  - Footsteps/GRASS
+  - Footsteps/METAL
+  - Footsteps/WOOD
   layers:
   - Default
   - TransparentFX
@@ -15,7 +18,7 @@ TagManager:
   - 
   - 
   - 
-  - 
+  - Interactable
   - 
   - 
   - 
