@@ -45,12 +45,11 @@ public class FirstPersonController : MonoBehaviour
 
     [Header("Crouch Parameters")]
     [SerializeField] private float crouchHeight = 0.5f;
-    [SerializeField] private float standingHeight = 2.5f;
+    [SerializeField] private float standingHeight = 2f;
     [SerializeField] private float timeToCrouch = 0.25f;
     [SerializeField] private Vector3 crouchingCenter = new Vector3(0, 0.5f, 0);
     [SerializeField] private Vector3 standingCenter = new Vector3(0, 0, 0);
     private bool isCrouching;
-    private bool duringCrouchAnimation;
     private Coroutine crouchRoutine;
     private bool startedCrouch;
     [Header("Headbob Parameters")]
@@ -327,7 +326,6 @@ public class FirstPersonController : MonoBehaviour
 
     private IEnumerator CrouchStand(bool isEnter)
     {
-        duringCrouchAnimation = true;
         isCrouching = isEnter;
 
         float timeElapsedCrouch = 0;
@@ -354,8 +352,6 @@ public class FirstPersonController : MonoBehaviour
         isCrouching = isEnter;
 
         crouchRoutine = null;
-
-        duringCrouchAnimation = false;
     }
 
     private void OnTriggerEnter(Collider other)
