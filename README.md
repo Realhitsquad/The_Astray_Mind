@@ -10,3 +10,5 @@ Left Alt - Crouch
 Space - Jump
 
 WASD - Movement
+
+E - Interact
