@@ -124,7 +124,7 @@ public class FirstPersonController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (startedCrouch && Physics.Raycast(playerCamera.transform.position, Vector3.up, 2f))
+        if (startedCrouch && Physics.Raycast(playerCamera.transform.position, Vector3.up, 1.7f))
         {
             if (Input.GetKeyUp(crouchKey))
             {
@@ -132,13 +132,13 @@ public class FirstPersonController : MonoBehaviour
                 canCrouch = false;
             }
         }
-        if (!startedCrouch && !Physics.Raycast(playerCamera.transform.position, Vector3.up, 2f))
+        if (!startedCrouch && !Physics.Raycast(playerCamera.transform.position, Vector3.up, 1.7f))
         {
             canCrouch = true;
             startedCrouch = true;
             isCrouching = false; 
         }
-        if (startedCrouch && !isCrouching && !Physics.Raycast(playerCamera.transform.position, Vector3.up, 2f))
+        if (startedCrouch && !isCrouching && !Physics.Raycast(playerCamera.transform.position, Vector3.up, 1.7f))
         {
             cc.height = Mathf.Lerp(cc.height, standingHeight, timecrouchthing / timeToCrouch);
         }

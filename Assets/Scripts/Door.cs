@@ -5,8 +5,13 @@ using UnityEngine;
 public class Door : Interactable
 {
     public GameObject door;
-    public float openRot, closeRot, speed;
+    public float openRot = 90f, closeRot, speed = 2f;
     public bool opening;
+
+    public override void Awake()
+    {
+        door = gameObject;
+    }
 
     private void Update()
     {
